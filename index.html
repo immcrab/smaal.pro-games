@@ -125,6 +125,30 @@
     text-decoration: underline;
 }
 
+.search-container {
+    width: 90%;
+    max-width: 1100px;
+    margin: 20px auto 0 auto;
+    text-align: center;
+}
+
+#searchInput {
+    width: 100%;
+    padding: 12px 16px;
+    background: #222;
+    border: 1px solid #333;
+    border-radius: 10px;
+    color: white;
+    font-size: 17px;
+    outline: none;
+}
+
+#searchInput:focus {
+    border-color: #4c8ef7;
+    box-shadow: 0 0 8px rgba(76, 142, 247, 0.5);
+}
+
+
     </style>
 </head>
 
@@ -139,13 +163,19 @@
 <body>
 
     <header>
-        <a href="http://games.smaal.pro">
+        <a href="index.html">
             <div class="nav-container">
             <div class="title">owen's games</div>
         </div>
     </a>
         
     </header>
+
+    <!-- SEARCH BAR -->
+<div class="search-container">
+    <input type="text" id="searchInput" placeholder="Search games...">
+</div>
+
 
     <div class="grid">
 
@@ -320,7 +350,7 @@
         <a href="backup/games/minecraft" target="_blank" class="card">
             <div class="card-content">
                 <div class="card-title">Minecraft</div>
-                <div class="card-desc">fake minecraft</div>
+                <div class="card-desc">totally real minercraft (filled up with minors)</div>
             </div>
         </a>
 
@@ -328,6 +358,13 @@
             <div class="card-content">
                 <div class="card-title">Paper IO</div>
                 <div class="card-desc">this isnt real paper, trust me i've tried...</div>
+            </div>
+        </a>
+
+        <a href="backup/games/drive" target="_blank" class="card">
+            <div class="card-content">
+                <div class="card-title">Drive 4X4</div>
+                <div class="card-desc">drive around for fun</div>
             </div>
         </a>
 
@@ -339,6 +376,27 @@
     <footer>
         Game Portal © 2025
     </footer>
+
+    <script>
+    const searchInput = document.getElementById("searchInput");
+
+    searchInput.addEventListener("keyup", function () {
+        let filter = searchInput.value.toLowerCase();
+        let cards = document.querySelectorAll(".card");
+
+        cards.forEach(card => {
+            let title = card.querySelector(".card-title").textContent.toLowerCase();
+            let desc = card.querySelector(".card-desc").textContent.toLowerCase();
+
+            if (title.includes(filter) || desc.includes(filter)) {
+                card.style.display = "block";
+            } else {
+                card.style.display = "none";
+            }
+        });
+    });
+</script>
+
 
 </body>
 

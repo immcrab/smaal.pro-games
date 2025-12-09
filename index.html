@@ -43,7 +43,6 @@
         text-shadow: 0 0 14px rgba(122,184,255,0.4);
     }
 
-    /* search box */
     .search-container {
         width: 90%;
         max-width: 1100px;
@@ -67,6 +66,16 @@
     #searchInput:focus {
         border-color: #7ab8ff;
         box-shadow: 0 0 12px rgba(122,184,255,0.4);
+    }
+
+    #gameCount {
+        width: 90%;
+        max-width: 1100px;
+        margin: 10px auto 0 auto;
+        font-size: 18px;
+        color: #c9d4ea;
+        opacity: 0.8;
+        text-align: left;
     }
 
     .grid {
@@ -153,26 +162,25 @@
     <a href="backup/support.html" target="_blank">support page</a>.
 </div>
 
-
 <body>
 
-    <header>
-        <a href="games.smaal.pro">
-            <div class="nav-container">
+<header>
+    <a href="games.smaal.pro">
+        <div class="nav-container">
             <div class="title">owen's games</div>
         </div>
     </a>
-        
-    </header>
+</header>
 
 <div class="search-container">
     <input type="text" id="searchInput" placeholder="Search games...">
 </div>
 
+<div id="gameCount">Loading game count...</div>
 
-    <div class="grid">
+<div class="grid">
 
-        <a href="backup/games/shooter" target="_blank" class="card">
+    <a href="backup/games/shooter" target="_blank" class="card">
             <div class="card-content">
                 <div class="card-title">Funny Shooter</div>
                 <div class="card-desc">kinda funny shooter</div>
@@ -382,7 +390,7 @@
             </div>
         </a>
 
-        <a href="backup/games/redhot-2/" target="_blank" class="card">
+        <a href="backup/games/redhot" target="_blank" class="card">
             <div class="card-content">
                 <div class="card-title">Redhot</div>
                 <div class="card-desc">redhot in slow mo</div>
@@ -410,37 +418,77 @@
             </div>
         </a>
 
-    </div>
+        <a href="backup/games/thumb-wars/" target="_blank" class="card">
+            <div class="card-content">
+                <div class="card-title">Thumb Wars</div>
+                <div class="card-desc">why is this even a game?</div>
+            </div>
+        </a>
 
-    
+        <a href="backup/games/snow-io/" target="_blank" class="card">
+            <div class="card-content">
+                <div class="card-title">Snow Battle</div>
+                <div class="card-desc">paper io, but not?</div>
+            </div>
+        </a>
 
-    
+        <a href="backup/games/eparkour/" target="_blank" class="card">
+            <div class="card-content">
+                <div class="card-title">eParkour</div>
+                <div class="card-desc">this is so hard bro🥀</div>
+            </div>
+        </a>
+        
+        <a href="backup/games/ballons-io/" target="_blank" class="card">
+            <div class="card-content">
+                <div class="card-title">Baloons</div>
+                <div class="card-desc">fake ahh names in this, anyways dag the other baloons</div>
+            </div>
+        </a>
 
-    <footer>
-        i like kids
-    </footer>
+</div>
 
-    <script>
-    const searchInput = document.getElementById("searchInput");
+<footer>
+    i like kids
+</footer>
 
-    searchInput.addEventListener("keyup", function () {
-        let filter = searchInput.value.toLowerCase();
-        let cards = document.querySelectorAll(".card");
+<script>
+const searchInput = document.getElementById("searchInput");
+const gameCount = document.getElementById("gameCount");
 
-        cards.forEach(card => {
-            let title = card.querySelector(".card-title").textContent.toLowerCase();
-            let desc = card.querySelector(".card-desc").textContent.toLowerCase();
+function updateGameCount() {  
+    const cards = document.querySelectorAll(".card");
+    let visibleCount = 0;
 
-            if (title.includes(filter) || desc.includes(filter)) {
-                card.style.display = "block";
-            } else {
-                card.style.display = "none";
-            }
-        });
+    cards.forEach(card => {
+        if (card.style.display !== "none") {
+            visibleCount++;
+        }
     });
+
+    gameCount.textContent = visibleCount + " games";
+}
+
+searchInput.addEventListener("keyup", function () {
+    let filter = searchInput.value.toLowerCase();
+    let cards = document.querySelectorAll(".card");
+
+    cards.forEach(card => {
+        let title = card.querySelector(".card-title").textContent.toLowerCase();
+        let desc = card.querySelector(".card-desc").textContent.toLowerCase();
+
+        if (title.includes(filter) || desc.includes(filter)) {
+            card.style.display = "block";
+        } else {
+            card.style.display = "none";
+        }
+    });
+
+    updateGameCount();
+});
+
+updateGameCount();
 </script>
 
-
 </body>
-
 </html>

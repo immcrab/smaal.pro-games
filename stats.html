@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Owen's Games | Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --bg: #1c1f26;
+            --card-bg: #232732;
+            --border: #303543;
+            --accent: #7ab8ff;
+            --text: #f2f4ff;
+            --kind: #2ecc71;
+            --toxic: #e74c3c;
+            --neutral: #95a5a6;
+        }
+
+        body { 
+            background: var(--bg); 
+            color: var(--text); 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+        }
+
+        .container { max-width: 1200px; margin: auto; }
+
+        header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding-bottom: 20px; 
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 30px;
+        }
+
+        .back-btn { 
+            color: var(--accent); 
+            text-decoration: none; 
+            font-weight: bold; 
+            font-size: 1.1rem;
+        }
+
+        /* Dashboard Grid Layout */
+        .dashboard-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); 
+            gap: 20px; 
+            margin-bottom: 30px; 
+        }
+
+        .stat-card { 
+            background: var(--card-bg); 
+            padding: 25px; 
+            border-radius: 15px; 
+            border: 1px solid var(--border); 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        h2 { margin-top: 0; color: var(--accent); font-size: 1.2rem; text-transform: uppercase; }
+
+        /* Tables */
+        .table-container { overflow-x: auto; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 12px; border-bottom: 1px solid var(--border); }
+        th { background: rgba(255,255,255,0.05); color: var(--accent); }
+
+        /* Vibe Labels */
+        .vibe-tag { 
+            padding: 4px 10px; 
+            border-radius: 20px; 
+            font-size: 0.75rem; 
+            font-weight: bold; 
+            text-transform: uppercase; 
+        }
+        .vibe-kind { background: var(--kind); color: white; }
+        .vibe-toxic { background: var(--toxic); color: white; box-shadow: 0 0 10px rgba(231, 76, 60, 0.3); }
+        .vibe-neutral { background: var(--neutral); color: white; }
+
+        .chart-wrap { height: 250px; width: 100%; position: relative; }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🎮 Site Analytics</h1>
+        <a href="index.html" class="back-btn">← Back to Arcade</a>
+    </header>
+
+    <div class="dashboard-grid">
+        <div class="stat-card">
+            <h2>Heart Popularity</h2>
+            <div class="chart-wrap">
+                <canvas id="heartChart"></canvas>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <h2>Overall Community Vibe</h2>
+            <div class="chart-wrap">
+                <canvas id="vibeChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <h2>🏆 Game Leaderboard</h2>
+        <div class="table-container">
+            <table id="leaderboardTable">
+                <thead>
+                    <tr>
+                        <th>Game</th>
+                        <th>Clicks</th>
+                        <th>Hearts</th>
+                        <th>Comments</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="stat-card" style="margin-top: 30px;">
+        <h2>💬 Recent Comments & Vibe Check</h2>
+        <div class="table-container" style="max-height: 500px; overflow-y: auto;">
+            <table id="commentFeed">
+                <thead>
+                    <tr>
+                        <th>Game</th>
+                        <th>User</th>
+                        <th>Message</th>
+                        <th>Analysis</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+<script>
+    // --- FIREBASE SETUP ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyBDXDtnufqucWuFPIYOnJOYxiLYriHfkVo",
+        authDomain: "code-stub.firebaseapp.com",
+        databaseURL: "https://code-stub-default-rtdb.firebaseio.com", 
+        projectId: "code-stub",
+        storageBucket: "code-stub.firebasestorage.app",
+        messagingSenderId: "389870178886",
+        appId: "1:389870178886:web:525e1e2f4dfaf0a3f33047"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // SENTIMENT DICTIONARY
+    const kindWords = ['fun', 'good', 'love', 'great', 'best', 'cool', 'wow', 'w', 'nice', 'awesome', 'enjoy', 'masterpiece'];
+    const toxicWords = ['bad', 'hate', 'boring', 'trash', 'ass', 'sucks', 'mid', 'l', 'worst', 'dumb', 'stupid', 'garbage'];
+
+    async function loadDashboard() {
+        // Fetch All Data
+        const statsSnap = await db.ref('stats').once('value');
+        const commentsSnap = await db.ref('comments').once('value');
+        
+        const statsData = statsSnap.val() || {};
+        const commentsData = commentsSnap.val() || {};
+
+        let leaderboardHTML = "";
+        let commentFeedHTML = "";
+        
+        let gameNames = [];
+        let heartCounts = [];
+        let globalVibe = { kind: 0, neutral: 0, toxic: 0 };
+
+        // 1. PROCESS GAMES & LEADERBOARD
+        for (let id in statsData) {
+            const cleanName = id.replace(/-/g, ' ').toUpperCase();
+            const clicks = statsData[id].clicks || 0;
+            const hearts = statsData[id].hearts || 0;
+            
+            // Count comments for this specific game
+            const gameComments = commentsData[id] ? Object.values(commentsData[id]) : [];
+            const count = gameComments.length;
+
+            gameNames.push(cleanName);
+            heartCounts.push(hearts);
+
+            leaderboardHTML += `
+                <tr>
+                    <td><b>${cleanName}</b></td>
+                    <td>${clicks}</td>
+                    <td>${hearts}</td>
+                    <td>${count}</td>
+                </tr>`;
+        }
+
+        // 2. PROCESS COMMENTS & SENTIMENT
+        for (let gameID in commentsData) {
+            const gameLabel = gameID.replace(/-/g, ' ');
+            const messages = Object.values(commentsData[gameID]);
+
+            messages.forEach(c => {
+                const msg = (c.content || "").toLowerCase();
+                let vibeClass = "vibe-neutral";
+                let vibeText = "Neutral 😐";
+
+                // Scan for Toxicity
+                if (toxicWords.some(word => msg.includes(word))) {
+                    vibeClass = "vibe-toxic";
+                    vibeText = "Toxic 🚩";
+                    globalVibe.toxic++;
+                } 
+                // Scan for Kindness
+                else if (kindWords.some(word => msg.includes(word))) {
+                    vibeClass = "vibe-kind";
+                    vibeText = "Kind ✨";
+                    globalVibe.kind++;
+                } else {
+                    globalVibe.neutral++;
+                }
+
+                commentFeedHTML += `
+                    <tr>
+                        <td><small>${gameLabel}</small></td>
+                        <td><b>${c.username || 'Anon'}</b></td>
+                        <td>"${c.content}"</td>
+                        <td><span class="vibe-tag ${vibeClass}">${vibeText}</span></td>
+                    </tr>`;
+            });
+        }
+
+        // Inject HTML
+        document.querySelector("#leaderboardTable tbody").innerHTML = leaderboardHTML;
+        document.querySelector("#commentFeed tbody").innerHTML = commentFeedHTML;
+
+        // 3. GENERATE CHARTS
+        renderCharts(gameNames, heartCounts, globalVibe);
+    }
+
+    function renderCharts(names, hearts, vibe) {
+        // Popularity Chart
+        new Chart(document.getElementById('heartChart'), {
+            type: 'bar',
+            data: {
+                labels: names,
+                datasets: [{
+                    label: 'Hearts',
+                    data: hearts,
+                    backgroundColor: '#7ab8ff',
+                    borderRadius: 5
+                }]
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { grid: { color: '#303543' }, ticks: { color: '#f2f4ff' } }, x: { ticks: { color: '#f2f4ff' } } }
+            }
+        });
+
+        // Vibe Doughnut Chart
+        new Chart(document.getElementById('vibeChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Kind', 'Neutral', 'Toxic'],
+                datasets: [{
+                    data: [vibe.kind, vibe.neutral, vibe.toxic],
+                    backgroundColor: ['#2ecc71', '#95a5a6', '#e74c3c'],
+                    borderWidth: 0
+                }]
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { color: '#f2f4ff' } } }
+            }
+        });
+    }
+
+    // Initialize
+    loadDashboard();
+</script>
+</body>
+</html>
